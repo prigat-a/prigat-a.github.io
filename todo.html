@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>To-Do List</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+    }
+
+    .container {
+      background: white;
+      border-radius: 15px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+      width: 100%;
+      max-width: 500px;
+      padding: 40px;
+    }
+
+    h1 {
+      color: #333;
+      margin-bottom: 30px;
+      text-align: center;
+      font-size: 2.5em;
+    }
+
+    .input-container {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 25px;
+    }
+
+    input[type="text"] {
+      flex: 1;
+      padding: 12px 15px;
+      border: 2px solid #e0e0e0;
+      border-radius: 8px;
+      font-size: 16px;
+      transition: border-color 0.3s;
+    }
+
+    input[type="text"]:focus {
+      outline: none;
+      border-color: #667eea;
+    }
+
+    button {
+      padding: 12px 25px;
+      background: #667eea;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+
+    button:hover {
+      background: #764ba2;
+    }
+
+    button:active {
+      transform: scale(0.98);
+    }
+
+    .todo-list {
+      list-style: none;
+    }
+
+    .todo-item {
+      background: #f9f9f9;
+      padding: 15px;
+      margin-bottom: 10px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      transition: all 0.3s;
+      border-left: 4px solid #667eea;
+    }
+
+    .todo-item:hover {
+      background: #f0f0f0;
+      transform: translateX(5px);
+    }
+
+    .todo-item.completed {
+      opacity: 0.6;
+      border-left-color: #4caf50;
+    }
+
+    .todo-item.completed .todo-text {
+      text-decoration: line-through;
+      color: #999;
+    }
+
+    input[type="checkbox"] {
+      width: 20px;
+      height: 20px;
+      cursor: pointer;
+      accent-color: #667eea;
+    }
+
+    .todo-text {
+      flex: 1;
+      color: #333;
+      font-size: 16px;
+      word-break: break-word;
+    }
+
+    .delete-btn {
+      background: #ff6b6b;
+      padding: 8px 12px;
+      font-size: 14px;
+      border-radius: 5px;
+    }
+
+    .delete-btn:hover {
+      background: #ff5252;
+    }
+
+    .stats {
+      display: flex;
+      justify-content: space-around;
+      margin-top: 30px;
+      padding-top: 20px;
+      border-top: 2px solid #e0e0e0;
+      text-align: center;
+    }
+
+    .stat {
+      flex: 1;
+    }
+
+    .stat-number {
+      font-size: 1.8em;
+      font-weight: bold;
+      color: #667eea;
+    }
+
+    .stat-label {
+      color: #999;
+      font-size: 0.9em;
+      margin-top: 5px;
+    }
+
+    .empty-state {
+      text-align: center;
+      color: #999;
+      padding: 40px 20px;
+      font-size: 18px;
+    }
+
+    .clear-all-btn {
+      width: 100%;
+      margin-top: 20px;
+      background: #ff9800;
+    }
+
+    .clear-all-btn:hover {
+      background: #e68900;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>📝 To-Do List</h1>
+    
+    <div class="input-container">
+      <input 
+        type="text" 
+        id="todoInput" 
+        placeholder="Add a new task..."
+        autocomplete="off"
+      >
+      <button onclick="addTodo()">Add</button>
+    </div>
+
+    <ul class="todo-list" id="todoList"></ul>
+
+    <div class="empty-state" id="emptyState" style="display: none;">
+      No tasks yet. Add one to get started! 🎉
+    </div>
+
+    <div class="stats">
+      <div class="stat">
+        <div class="stat-number" id="totalCount">0</div>
+        <div class="stat-label">Total</div>
+      </div>
+      <div class="stat">
+        <div class="stat-number" id="completedCount">0</div>
+        <div class="stat-label">Completed</div>
+      </div>
+      <div class="stat">
+        <div class="stat-number" id="pendingCount">0</div>
+        <div class="stat-label">Pending</div>
+      </div>
+    </div>
+
+    <button class="clear-all-btn" onclick="clearCompleted()">Clear Completed</button>
+  </div>
+
+  <script>
+    const STORAGE_KEY = 'todoList';
+    let todos = [];
+
+    // Load todos from localStorage
+    function loadTodos() {
+      try {
+        const saved = localStorage.getItem(STORAGE_KEY);
+        todos = saved ? JSON.parse(saved) : [];
+      } catch (e) {
+        console.error('Error loading todos:', e);
+        todos = [];
+      }
+    }
+
+    // Save todos to localStorage
+    function saveTodos() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(todos));
+    }
+
+    // Add a new todo
+    function addTodo() {
+      const input = document.getElementById('todoInput');
+      const text = input.value.trim();
+
+      if (!text) {
+        alert('Please enter a task!');
+        return;
+      }
+
+      const todo = {
+        id: Date.now(),
+        text: text,
+        completed: false,
+        createdAt: new Date().toLocaleString()
+      };
+
+      todos.push(todo);
+      saveTodos();
+      input.value = '';
+      render();
+      input.focus();
+    }
+
+    // Toggle todo completion
+    function toggleTodo(id) {
+      const todo = todos.find(t => t.id === id);
+      if (todo) {
+        todo.completed = !todo.completed;
+        saveTodos();
+        render();
+      }
+    }
+
+    // Delete a todo
+    function deleteTodo(id) {
+      todos = todos.filter(t => t.id !== id);
+      saveTodos();
+      render();
+    }
+
+    // Clear all completed todos
+    function clearCompleted() {
+      const completedCount = todos.filter(t => t.completed).length;
+      if (completedCount === 0) {
+        alert('No completed tasks to clear!');
+        return;
+      }
+
+      if (confirm(`Clear ${completedCount} completed task(s)?`)) {
+        todos = todos.filter(t => !t.completed);
+        saveTodos();
+        render();
+      }
+    }
+
+    // Update statistics
+    function updateStats() {
+      const total = todos.length;
+      const completed = todos.filter(t => t.completed).length;
+      const pending = total - completed;
+
+      document.getElementById('totalCount').textContent = total;
+      document.getElementById('completedCount').textContent = completed;
+      document.getElementById('pendingCount').textContent = pending;
+    }
+
+    // Render the todo list
+    function render() {
+      const todoList = document.getElementById('todoList');
+      const emptyState = document.getElementById('emptyState');
+
+      todoList.innerHTML = '';
+
+      if (todos.length === 0) {
+        emptyState.style.display = 'block';
+      } else {
+        emptyState.style.display = 'none';
+        todos.forEach(todo => {
+          const li = document.createElement('li');
+          li.className = `todo-item ${todo.completed ? 'completed' : ''}`;
+          li.innerHTML = `
+            <input 
+              type="checkbox" 
+              ${todo.completed ? 'checked' : ''} 
+              onchange="toggleTodo(${todo.id})"
+            >
+            <span class="todo-text">${escapeHtml(todo.text)}</span>
+            <button class="delete-btn" onclick="deleteTodo(${todo.id})">Delete</button>
+          `;
+          todoList.appendChild(li);
+        });
+      }
+
+      updateStats();
+    }
+
+    // Escape HTML to prevent XSS
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    // Handle Enter key
+    document.getElementById('todoInput').addEventListener('keypress', function(e) {
+      if (e.key === 'Enter') {
+        addTodo();
+      }
+    });
+
+    // Initialize
+    loadTodos();
+    render();
+  </script>
+</body>
+</html>
