@@ -407,6 +407,25 @@
     padding: 5px 8px;
     margin-left: 10px;
   }
+
+  .host-select-row {
+    margin: 10px 0;
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+
+  .host-select-row label {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--ink);
+  }
+
+  .host-select-row select {
+    padding: 6px 10px;
+    font-size: 13px;
+  }
 </style>
 </head>
 <body>
@@ -447,9 +466,17 @@
             <label for="newDate">תאריך (YYYY-MM-DD)</label>
             <input type="text" id="newDate" placeholder="2027-01-22">
           </div>
-          <div>
-            <label for="newHost">מארח/ת (טקסט חופשי)</label>
-            <input type="text" id="newHost" placeholder="למשל: אמא, סבתא, בית משותף">
+          <div class="full">
+            <label for="newHost">מארח/ת</label>
+            <select id="newHost">
+              <option value="סבתא">סבתא</option>
+              <option value="אמא (צד אלון)">אמא (צד אלון)</option>
+              <option value="אחיות (צד אלון)">אחיות (צד אלון)</option>
+              <option value="אמא / משפחה (צד חן)">אמא / משפחה (צד חן)</option>
+              <option value="משותף">משותף / שניהם</option>
+              <option value="other">אחר (הקלד שם חופשי)</option>
+            </select>
+            <input type="text" id="newHostCustom" placeholder="הקלד שם מארח/ת" style="display:none; margin-top:8px;">
           </div>
           <div>
             <label for="newAddedBy">נוצר על ידי</label>
@@ -501,66 +528,74 @@
   checkAuth();
 
 (function () {
-  var STORAGE_KEY = 'moadim-roster-v5';
-  var PEOPLE_KEY = 'moadim-people-v5';
+  var STORAGE_KEY = 'moadim-roster-v6';
+  var PEOPLE_KEY = 'moadim-people-v6';
 
   var DEFAULT_PEOPLE = ['אלון', 'חן'];
+
+  var HOST_GUIDE_MAP = {
+    'סבתא': 'ארוחה משפחתית אצל סבתא — כולן/ם מוזמנות/ים.',
+    'אמא (צד אלון)': '3 האחיות של אלון מגיעות לאמא. משפחות הגיסים פנויות לחגוג אצל משפחתם.',
+    'אחיות (צד אלון)': 'אירוח אצל האחיות של אלון. הגיסים מגיעים איתן; אחי חן פנויים למשפחות בניהזוג.',
+    'אמא / משפחה (צד חן)': 'האחים והאחיות של חן מגיעים לצד של חן. האחיות של אלון פנויות לחגוג אצל משפחות בעליהן.',
+    'משותף': 'מפגש משותף לכל המשפחות.'
+  };
 
   var DEFAULT_ENTRIES = [
     // 5786-5787 (2026)
     { id: 'rh1-26', name: 'ראש השנה — ערב א׳', dateStr: 'שישי, 11 ספטמבר 2026', isoDate: '2026-09-11', hostKey: 'סבתא', attendees: [], swap: null, year: '2026-2027' },
     { id: 'rh2-26', name: 'ראש השנה — ערב ב׳', dateStr: 'שבת, 12 ספטמבר 2026', isoDate: '2026-09-12', hostKey: 'סבתא', attendees: [], swap: null, year: '2026-2027' },
-    { id: 'sukkot1-26', name: 'סוכות — ערב חג ראשון', dateStr: 'חמישי, 24 ספטמבר 2026', isoDate: '2026-09-24', hostKey: 'אמא', attendees: [], swap: null, year: '2026-2027' },
-    { id: 'chanukah-26', name: 'חנוכה (ארוחה משפחתית)', dateStr: 'שישי, 4 דצמבר 2026', isoDate: '2026-12-04', hostKey: 'אמא / משפחה', attendees: [], swap: null, year: '2026-2027' },
-    { id: 'seder-26', name: 'פסח — ליל הסדר', dateStr: 'רביעי, 21 אפריל 2027', isoDate: '2027-04-21', hostKey: 'אמא', attendees: [], swap: null, year: '2026-2027' },
-    { id: 'pesach7-26', name: 'פסח — שביעי של פסח', dateStr: 'שלישי, 27 אפריל 2027', isoDate: '2027-04-27', hostKey: 'אמא / משפחה', attendees: [], swap: null, year: '2026-2027' },
-    { id: 'atzmaut-eve-26', name: 'יום העצמאות — ארוחת ערב', dateStr: 'שלישי, 11 מאי 2027', isoDate: '2027-05-11', hostKey: 'אחיות', attendees: [], swap: null, year: '2026-2027' },
-    { id: 'atzmaut-day-26', name: 'יום העצמאות — על האש (צהריים)', dateStr: 'רביעי, 12 מאי 2027', isoDate: '2027-05-12', hostKey: 'אמא / משפחה', attendees: [], swap: null, year: '2026-2027' },
-    { id: 'shavuot-26', name: 'שבועות', dateStr: 'רביעי, 9 ביוני 2027', isoDate: '2027-06-09', hostKey: 'אמא', attendees: [], swap: null, year: '2026-2027' },
+    { id: 'sukkot1-26', name: 'סוכות — ערב חג ראשון', dateStr: 'חמישי, 24 ספטמבר 2026', isoDate: '2026-09-24', hostKey: 'אמא (צד אלון)', attendees: [], swap: null, year: '2026-2027' },
+    { id: 'chanukah-26', name: 'חנוכה (ארוחה משפחתית)', dateStr: 'שישי, 4 דצמבר 2026', isoDate: '2026-12-04', hostKey: 'אמא / משפחה (צד חן)', attendees: [], swap: null, year: '2026-2027' },
+    { id: 'seder-26', name: 'פסח — ליל הסדר', dateStr: 'רביעי, 21 אפריל 2027', isoDate: '2027-04-21', hostKey: 'אמא (צד אלון)', attendees: [], swap: null, year: '2026-2027' },
+    { id: 'pesach7-26', name: 'פסח — שביעי של פסח', dateStr: 'שלישי, 27 אפריל 2027', isoDate: '2027-04-27', hostKey: 'אמא / משפחה (צד חן)', attendees: [], swap: null, year: '2026-2027' },
+    { id: 'atzmaut-eve-26', name: 'יום העצמאות — ארוחת ערב', dateStr: 'שלישי, 11 מאי 2027', isoDate: '2027-05-11', hostKey: 'אחיות (צד אלון)', attendees: [], swap: null, year: '2026-2027' },
+    { id: 'atzmaut-day-26', name: 'יום העצמאות — על האש (צהריים)', dateStr: 'רביעי, 12 מאי 2027', isoDate: '2027-05-12', hostKey: 'אמא / משפחה (צד חן)', attendees: [], swap: null, year: '2026-2027' },
+    { id: 'shavuot-26', name: 'שבועות', dateStr: 'רביעי, 9 ביוני 2027', isoDate: '2027-06-09', hostKey: 'אמא (צד אלון)', attendees: [], swap: null, year: '2026-2027' },
 
     // 5787-5788 (2027)
     { id: 'rh1-27', name: 'ראש השנה — ערב א׳', dateStr: 'שלישי, 29 ספטמבר 2027', isoDate: '2027-09-29', hostKey: 'סבתא', attendees: [], swap: null, year: '2027-2028' },
     { id: 'rh2-27', name: 'ראש השנה — ערב ב׳', dateStr: 'רביעי, 30 ספטמבר 2027', isoDate: '2027-09-30', hostKey: 'סבתא', attendees: [], swap: null, year: '2027-2028' },
-    { id: 'sukkot1-27', name: 'סוכות — ערב חג ראשון', dateStr: 'רביעי, 13 אוקטובר 2027', isoDate: '2027-10-13', hostKey: 'אמא', attendees: [], swap: null, year: '2027-2028' },
-    { id: 'chanukah-27', name: 'חנוכה (ארוחה משפחתית)', dateStr: 'שלישי, 23 נובמבר 2027', isoDate: '2027-11-23', hostKey: 'אמא / משפחה', attendees: [], swap: null, year: '2027-2028' },
-    { id: 'seder-27', name: 'פסח — ליל הסדר', dateStr: 'שישי, 8 אפריל 2028', isoDate: '2028-04-08', hostKey: 'אמא', attendees: [], swap: null, year: '2027-2028' },
-    { id: 'pesach7-27', name: 'פסח — שביעי של פסח', dateStr: 'רביעי, 14 אפריל 2028', isoDate: '2028-04-14', hostKey: 'אמא / משפחה', attendees: [], swap: null, year: '2027-2028' },
-    { id: 'atzmaut-eve-27', name: 'יום העצמאות — ארוחת ערב', dateStr: 'שלישי, 25 אפריל 2028', isoDate: '2028-04-25', hostKey: 'אחיות', attendees: [], swap: null, year: '2027-2028' },
-    { id: 'atzmaut-day-27', name: 'יום העצמאות — על האש (צהריים)', dateStr: 'רביעי, 26 אפריל 2028', isoDate: '2028-04-26', hostKey: 'אמא / משפחה', attendees: [], swap: null, year: '2027-2028' },
-    { id: 'shavuot-27', name: 'שבועות', dateStr: 'שני, 22 מאי 2028', isoDate: '2028-05-22', hostKey: 'אמא', attendees: [], swap: null, year: '2027-2028' },
+    { id: 'sukkot1-27', name: 'סוכות — ערב חג ראשון', dateStr: 'רביעי, 13 אוקטובר 2027', isoDate: '2027-10-13', hostKey: 'אמא (צד אלון)', attendees: [], swap: null, year: '2027-2028' },
+    { id: 'chanukah-27', name: 'חנוכה (ארוחה משפחתית)', dateStr: 'שלישי, 23 נובמבר 2027', isoDate: '2027-11-23', hostKey: 'אמא / משפחה (צד חן)', attendees: [], swap: null, year: '2027-2028' },
+    { id: 'seder-27', name: 'פסח — ליל הסדר', dateStr: 'שישי, 8 אפריל 2028', isoDate: '2028-04-08', hostKey: 'אמא (צד אלון)', attendees: [], swap: null, year: '2027-2028' },
+    { id: 'pesach7-27', name: 'פסח — שביעי של פסח', dateStr: 'רביעי, 14 אפריל 2028', isoDate: '2028-04-14', hostKey: 'אמא / משפחה (צד חן)', attendees: [], swap: null, year: '2027-2028' },
+    { id: 'atzmaut-eve-27', name: 'יום העצמאות — ארוחת ערב', dateStr: 'שלישי, 25 אפריל 2028', isoDate: '2028-04-25', hostKey: 'אחיות (צד אלון)', attendees: [], swap: null, year: '2027-2028' },
+    { id: 'atzmaut-day-27', name: 'יום העצמאות — על האש (צהריים)', dateStr: 'רביעי, 26 אפריל 2028', isoDate: '2028-04-26', hostKey: 'אמא / משפחה (צד חן)', attendees: [], swap: null, year: '2027-2028' },
+    { id: 'shavuot-27', name: 'שבועות', dateStr: 'שני, 22 מאי 2028', isoDate: '2028-05-22', hostKey: 'אמא (צד אלון)', attendees: [], swap: null, year: '2027-2028' },
 
     // 5788-5789 (2028)
     { id: 'rh1-28', name: 'ראש השנה — ערב א׳', dateStr: 'ראשון, 17 ספטמבר 2028', isoDate: '2028-09-17', hostKey: 'סבתא', attendees: [], swap: null, year: '2028-2029' },
     { id: 'rh2-28', name: 'ראש השנה — ערב ב׳', dateStr: 'שני, 18 ספטמבר 2028', isoDate: '2028-09-18', hostKey: 'סבתא', attendees: [], swap: null, year: '2028-2029' },
-    { id: 'sukkot1-28', name: 'סוכות — ערב חג ראשון', dateStr: 'שני, 2 אוקטובר 2028', isoDate: '2028-10-02', hostKey: 'אמא', attendees: [], swap: null, year: '2028-2029' },
-    { id: 'chanukah-28', name: 'חנוכה (ארוחה משפחתית)', dateStr: 'ראשון, 10 דצמבר 2028', isoDate: '2028-12-10', hostKey: 'אמא / משפחה', attendees: [], swap: null, year: '2028-2029' },
-    { id: 'seder-28', name: 'פסח — ליל הסדר', dateStr: 'שלישי, 27 מרץ 2029', isoDate: '2029-03-27', hostKey: 'אמא', attendees: [], swap: null, year: '2028-2029' },
-    { id: 'pesach7-28', name: 'פסח — שביעי של פסח', dateStr: 'שני, 2 אפריל 2029', isoDate: '2029-04-02', hostKey: 'אמא / משפחה', attendees: [], swap: null, year: '2028-2029' },
-    { id: 'atzmaut-eve-28', name: 'יום העצמאות — ארוחת ערב', dateStr: 'שלישי, 10 אפריל 2029', isoDate: '2029-04-10', hostKey: 'אחיות', attendees: [], swap: null, year: '2028-2029' },
-    { id: 'atzmaut-day-28', name: 'יום העצמאות — על האש (צהריים)', dateStr: 'רביעי, 11 אפריל 2029', isoDate: '2029-04-11', hostKey: 'אמא / משפחה', attendees: [], swap: null, year: '2028-2029' },
-    { id: 'shavuot-28', name: 'שבועות', dateStr: 'רביעי, 7 ביוני 2029', isoDate: '2029-06-07', hostKey: 'אמא', attendees: [], swap: null, year: '2028-2029' },
+    { id: 'sukkot1-28', name: 'סוכות — ערב חג ראשון', dateStr: 'שני, 2 אוקטובר 2028', isoDate: '2028-10-02', hostKey: 'אמא (צד אלון)', attendees: [], swap: null, year: '2028-2029' },
+    { id: 'chanukah-28', name: 'חנוכה (ארוחה משפחתית)', dateStr: 'ראשון, 10 דצמבר 2028', isoDate: '2028-12-10', hostKey: 'אמא / משפחה (צד חן)', attendees: [], swap: null, year: '2028-2029' },
+    { id: 'seder-28', name: 'פסח — ליל הסדר', dateStr: 'שלישי, 27 מרץ 2029', isoDate: '2029-03-27', hostKey: 'אמא (צד אלון)', attendees: [], swap: null, year: '2028-2029' },
+    { id: 'pesach7-28', name: 'פסח — שביעי של פסח', dateStr: 'שני, 2 אפריל 2029', isoDate: '2029-04-02', hostKey: 'אמא / משפחה (צד חן)', attendees: [], swap: null, year: '2028-2029' },
+    { id: 'atzmaut-eve-28', name: 'יום העצמאות — ארוחת ערב', dateStr: 'שלישי, 10 אפריל 2029', isoDate: '2029-04-10', hostKey: 'אחיות (צד אלון)', attendees: [], swap: null, year: '2028-2029' },
+    { id: 'atzmaut-day-28', name: 'יום העצמאות — על האש (צהריים)', dateStr: 'רביעי, 11 אפריל 2029', isoDate: '2029-04-11', hostKey: 'אמא / משפחה (צד חן)', attendees: [], swap: null, year: '2028-2029' },
+    { id: 'shavuot-28', name: 'שבועות', dateStr: 'רביעי, 7 ביוני 2029', isoDate: '2029-06-07', hostKey: 'אמא (צד אלון)', attendees: [], swap: null, year: '2028-2029' },
 
     // 5789-5790 (2029)
     { id: 'rh1-29', name: 'ראש השנה — ערב א׳', dateStr: 'ראשון, 6 ספטמבר 2029', isoDate: '2029-09-06', hostKey: 'סבתא', attendees: [], swap: null, year: '2029-2030' },
     { id: 'rh2-29', name: 'ראש השנה — ערב ב׳', dateStr: 'שני, 7 ספטמבר 2029', isoDate: '2029-09-07', hostKey: 'סבתא', attendees: [], swap: null, year: '2029-2030' },
-    { id: 'sukkot1-29', name: 'סוכות — ערב חג ראשון', dateStr: 'שני, 21 אוקטובר 2029', isoDate: '2029-10-21', hostKey: 'אמא', attendees: [], swap: null, year: '2029-2030' },
-    { id: 'chanukah-29', name: 'חנוכה (ארוחה משפחתית)', dateStr: 'ראשון, 29 דצמבר 2029', isoDate: '2029-12-29', hostKey: 'אמא / משפחה', attendees: [], swap: null, year: '2029-2030' },
-    { id: 'seder-29', name: 'פסח — ליל הסדר', dateStr: 'שישי, 15 אפריל 2030', isoDate: '2030-04-15', hostKey: 'אמא', attendees: [], swap: null, year: '2029-2030' },
-    { id: 'pesach7-29', name: 'פסח — שביעי של פסח', dateStr: 'חמישי, 21 אפריל 2030', isoDate: '2030-04-21', hostKey: 'אמא / משפחה', attendees: [], swap: null, year: '2029-2030' },
-    { id: 'atzmaut-eve-29', name: 'יום העצמאות — ארוחת ערב', dateStr: 'שישי, 29 אפריל 2030', isoDate: '2030-04-29', hostKey: 'אחיות', attendees: [], swap: null, year: '2029-2030' },
-    { id: 'atzmaut-day-29', name: 'יום העצמאות — על האש (צהריים)', dateStr: 'שבת, 30 אפריל 2030', isoDate: '2030-04-30', hostKey: 'אמא / משפחה', attendees: [], swap: null, year: '2029-2030' },
-    { id: 'shavuot-29', name: 'שבועות', dateStr: 'שני, 26 מאי 2030', isoDate: '2030-05-26', hostKey: 'אמא', attendees: [], swap: null, year: '2029-2030' },
+    { id: 'sukkot1-29', name: 'סוכות — ערב חג ראשון', dateStr: 'שני, 21 אוקטובר 2029', isoDate: '2029-10-21', hostKey: 'אמא (צד אלון)', attendees: [], swap: null, year: '2029-2030' },
+    { id: 'chanukah-29', name: 'חנוכה (ארוחה משפחתית)', dateStr: 'ראשון, 29 דצמבר 2029', isoDate: '2029-12-29', hostKey: 'אמא / משפחה (צד חן)', attendees: [], swap: null, year: '2029-2030' },
+    { id: 'seder-29', name: 'פסח — ליל הסדר', dateStr: 'שישי, 15 אפריל 2030', isoDate: '2030-04-15', hostKey: 'אמא (צד אלון)', attendees: [], swap: null, year: '2029-2030' },
+    { id: 'pesach7-29', name: 'פסח — שביעי של פסח', dateStr: 'חמישי, 21 אפריל 2030', isoDate: '2030-04-21', hostKey: 'אמא / משפחה (צד חן)', attendees: [], swap: null, year: '2029-2030' },
+    { id: 'atzmaut-eve-29', name: 'יום העצמאות — ארוחת ערב', dateStr: 'שישי, 29 אפריל 2030', isoDate: '2030-04-29', hostKey: 'אחיות (צד אלון)', attendees: [], swap: null, year: '2029-2030' },
+    { id: 'atzmaut-day-29', name: 'יום העצמאות — על האש (צהריים)', dateStr: 'שבת, 30 אפריל 2030', isoDate: '2030-04-30', hostKey: 'אמא / משפחה (צד חן)', attendees: [], swap: null, year: '2029-2030' },
+    { id: 'shavuot-29', name: 'שבועות', dateStr: 'שני, 26 מאי 2030', isoDate: '2030-05-26', hostKey: 'אמא (צד אלון)', attendees: [], swap: null, year: '2029-2030' },
 
     // 5790-5791 (2030)
     { id: 'rh1-30', name: 'ראש השנה — ערב א׳', dateStr: 'חמישי, 25 ספטמבר 2030', isoDate: '2030-09-25', hostKey: 'סבתא', attendees: [], swap: null, year: '2030-2031' },
     { id: 'rh2-30', name: 'ראש השנה — ערב ב׳', dateStr: 'שישי, 26 ספטמבר 2030', isoDate: '2030-09-26', hostKey: 'סבתא', attendees: [], swap: null, year: '2030-2031' },
-    { id: 'sukkot1-30', name: 'סוכות — ערב חג ראשון', dateStr: 'שישי, 10 אוקטובר 2030', isoDate: '2030-10-10', hostKey: 'אמא', attendees: [], swap: null, year: '2030-2031' },
-    { id: 'chanukah-30', name: 'חנוכה (ארוחה משפחתית)', dateStr: 'חמישי, 18 דצמבר 2030', isoDate: '2030-12-18', hostKey: 'אמא / משפחה', attendees: [], swap: null, year: '2030-2031' },
-    { id: 'seder-30', name: 'פסח — ליל הסדר', dateStr: 'שלישי, 4 אפריל 2031', isoDate: '2031-04-04', hostKey: 'אמא', attendees: [], swap: null, year: '2030-2031' },
-    { id: 'pesach7-30', name: 'פסח — שביעי של פסח', dateStr: 'שני, 10 אפריל 2031', isoDate: '2031-04-10', hostKey: 'אמא / משפחה', attendees: [], swap: null, year: '2030-2031' },
-    { id: 'atzmaut-eve-30', name: 'יום העצמאות — ארוחת ערב', dateStr: 'שלישי, 18 אפריל 2031', isoDate: '2031-04-18', hostKey: 'אחיות', attendees: [], swap: null, year: '2030-2031' },
-    { id: 'atzmaut-day-30', name: 'יום העצמאות — על האש (צהריים)', dateStr: 'רביעי, 19 אפריל 2031', isoDate: '2031-04-19', hostKey: 'אמא / משפחה', attendees: [], swap: null, year: '2030-2031' },
-    { id: 'shavuot-30', name: 'שבועות', dateStr: 'רביעי, 14 מאי 2031', isoDate: '2031-05-14', hostKey: 'אמא', attendees: [], swap: null, year: '2030-2031' }
+    { id: 'sukkot1-30', name: 'סוכות — ערב חג ראשון', dateStr: 'שישי, 10 אוקטובר 2030', isoDate: '2030-10-10', hostKey: 'אמא (צד אלון)', attendees: [], swap: null, year: '2030-2031' },
+    { id: 'chanukah-30', name: 'חנוכה (ארוחה משפחתית)', dateStr: 'חמישי, 18 דצמבר 2030', isoDate: '2030-12-18', hostKey: 'אמא / משפחה (צד חן)', attendees: [], swap: null, year: '2030-2031' },
+    { id: 'seder-30', name: 'פסח — ליל הסדר', dateStr: 'שלישי, 4 אפריל 2031', isoDate: '2031-04-04', hostKey: 'אמא (צד אלון)', attendees: [], swap: null, year: '2030-2031' },
+    { id: 'pesach7-30', name: 'פסח — שביעי של פסח', dateStr: 'שני, 10 אפריל 2031', isoDate: '2031-04-10', hostKey: 'אמא / משפחה (צד חן)', attendees: [], swap: null, year: '2030-2031' },
+    { id: 'atzmaut-eve-30', name: 'יום העצמאות — ארוחת ערב', dateStr: 'שלישי, 18 אפריל 2031', isoDate: '2031-04-18', hostKey: 'אחיות (צד אלון)', attendees: [], swap: null, year: '2030-2031' },
+    { id: 'atzmaut-day-30', name: 'יום העצמאות — על האש (צהריים)', dateStr: 'רביעי, 19 אפריל 2031', isoDate: '2031-04-19', hostKey: 'אמא / משפחה (צד חן)', attendees: [], swap: null, year: '2030-2031' },
+    { id: 'shavuot-30', name: 'שבועות', dateStr: 'רביעי, 14 מאי 2031', isoDate: '2031-05-14', hostKey: 'אמא (צד אלון)', attendees: [], swap: null, year: '2030-2031' }
   ];
 
   var state = { entries: [], people: DEFAULT_PEOPLE.slice() };
@@ -582,6 +617,12 @@
     var d = document.createElement('div');
     d.textContent = str;
     return d.innerHTML;
+  }
+
+  function getSideClass(hostKey) {
+    if (hostKey.includes('אלון')) return 'alon';
+    if (hostKey.includes('חן')) return 'chen';
+    return 'both';
   }
 
   function loadState() {
@@ -690,27 +731,24 @@
       spine.className = 'spine';
 
       yearEntries.forEach(function (entry) {
+        var sideClass = getSideClass(entry.hostKey);
         var wrap = document.createElement('div');
-        wrap.className = 'entry side-both';
+        wrap.className = 'entry side-' + sideClass;
         wrap.id = 'entry-' + entry.id;
 
         var card = document.createElement('div');
         card.className = 'card';
 
         var banner = document.createElement('div');
-        banner.className = 'host-banner side-both';
-        var bannerText = document.createElement('span');
-        bannerText.textContent = 'מארח/ת: ' + escapeHtml(entry.hostKey);
-        banner.appendChild(bannerText);
-
-        var editBtn = document.createElement('button');
-        editBtn.className = 'edit-host-btn';
-        editBtn.textContent = 'ערוך';
-        editBtn.addEventListener('click', function(e) {
-          e.stopPropagation();
-          editHost(entry.id);
-        });
-        banner.appendChild(editBtn);
+        banner.className = 'host-banner side-' + sideClass;
+        var bannerSpan = document.createElement('span');
+        bannerSpan.textContent = 'מארח/ת: ' + escapeHtml(entry.hostKey) + ' 🏠';
+        banner.appendChild(bannerSpan);
+        
+        var hostLabel = document.createElement('span');
+        hostLabel.className = 'host-label';
+        hostLabel.textContent = 'מארחים';
+        banner.appendChild(hostLabel);
 
         card.appendChild(banner);
 
@@ -728,6 +766,15 @@
         row1.appendChild(h2);
         row1.appendChild(dateSpan);
         body.appendChild(row1);
+
+        // Show recommendation if available
+        var guide = HOST_GUIDE_MAP[entry.hostKey];
+        if (guide) {
+          var guideEl = document.createElement('div');
+          guideEl.className = 'sibling-guide';
+          guideEl.innerHTML = '<strong>💡 סידור הגעה לאחים ולגיסים:</strong> ' + guide;
+          body.appendChild(guideEl);
+        }
 
         var attendeesEl = document.createElement('div');
         attendeesEl.className = 'attendees';
@@ -764,6 +811,14 @@
           promptSwap(entry.id);
         });
         controls.appendChild(swapBtn);
+
+        var editBtn = document.createElement('button');
+        editBtn.textContent = 'ערוך מארח/ת';
+        editBtn.className = 'small ghost';
+        editBtn.addEventListener('click', function () {
+          editHost(entry.id);
+        });
+        controls.appendChild(editBtn);
 
         if (entry.swap) {
           var clearSwap = document.createElement('button');
@@ -876,7 +931,8 @@
 
       var match = state.entries.find(function (e) { return e.isoDate === iso; });
       if (match) {
-        cell.classList.add('has-event', 'side-both');
+        var sideClass = getSideClass(match.hostKey);
+        cell.classList.add('has-event', 'side-' + sideClass);
         var dot = document.createElement('div');
         dot.className = 'event-dot';
         cell.appendChild(dot);
@@ -907,14 +963,24 @@
 
   var newName = document.getElementById('newName');
   var newDate = document.getElementById('newDate');
-  var newHostInput = document.getElementById('newHost');
+  var newHostSelect = document.getElementById('newHost');
+  var newHostCustom = document.getElementById('newHostCustom');
   var addBtn = document.getElementById('addBtn');
   var addErr = document.getElementById('addErr');
+
+  newHostSelect.addEventListener('change', function() {
+    if (newHostSelect.value === 'other') {
+      newHostCustom.style.display = 'block';
+      newHostCustom.focus();
+    } else {
+      newHostCustom.style.display = 'none';
+    }
+  });
 
   addBtn.addEventListener('click', function () {
     var name = newName.value.trim();
     var iso = newDate.value.trim();
-    var host = newHostInput.value.trim();
+    var host = newHostSelect.value === 'other' ? newHostCustom.value.trim() : newHostSelect.value;
     
     if (!name || !iso || !host) {
       addErr.classList.add('show');
@@ -954,7 +1020,9 @@
 
     newName.value = '';
     newDate.value = '';
-    newHostInput.value = '';
+    newHostSelect.value = 'סבתא';
+    newHostCustom.value = '';
+    newHostCustom.style.display = 'none';
 
     render();
     renderCalendar();
