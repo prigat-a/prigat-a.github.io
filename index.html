@@ -42,6 +42,9 @@
     margin-bottom: 20px;
     border-bottom: 2px solid var(--line);
     padding-bottom: 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
   }
   header.top h1 {
     font-size: 34px;
@@ -54,6 +57,22 @@
     font-size: 15px;
     margin: 0;
     line-height: 1.5;
+  }
+  .header-top-content {
+    flex: 1;
+  }
+  .logout-btn {
+    padding: 8px 16px;
+    background: var(--danger);
+    color: var(--white);
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 14px;
+  }
+  .logout-btn:hover {
+    background: #8B3226;
   }
 
   .layout {
@@ -368,8 +387,11 @@
 <div class="wrap">
 
   <header class="top">
-    <h1 class="serif">מועדים</h1>
-    <p class="sub">לוח חגים משפחתי. בחרו מארחים (אמא, סבתא, אחיות, משפחה), ראו את סידורי ההגעה וסמנו נוכחות.</p>
+    <div class="header-top-content">
+      <h1 class="serif">מועדים</h1>
+      <p class="sub">לוח חגים משפחתי. בחרו מארחים (אמא, סבתא, אחיות, משפחה), ראו את סידורי ההגעה וסמנו נוכחות.</p>
+    </div>
+    <button class="logout-btn" onclick="logout()">התנתקות</button>
   </header>
 
   <div class="layout">
@@ -447,6 +469,23 @@
 </div>
 
 <script>
+  const SESSION_KEY = 'familyCalendarAuth';
+
+  // Check authentication before loading
+  function checkAuth() {
+    if (sessionStorage.getItem(SESSION_KEY) !== 'true') {
+      window.location.href = 'login.html';
+    }
+  }
+
+  function logout() {
+    sessionStorage.removeItem(SESSION_KEY);
+    window.location.href = 'login.html';
+  }
+
+  // Check auth on page load
+  checkAuth();
+
 (function () {
   var STORAGE_KEY = 'moadim-roster-v4';
   var PEOPLE_KEY = 'moadim-people-v4';
