@@ -1,0 +1,815 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>מועדים — לוח חגים משפחתי</title>
+<style>
+  :root {
+    --parchment: #F6F1E3;
+    --parchment-2: #EFE8D4;
+    --ink: #2B2620;
+    --ink-soft: #6B6154;
+    --line: #DED5BE;
+    --pomegranate: #7E2A3B;
+    --pomegranate-light: #F3E3E6;
+    --gold: #B8862E;
+    --gold-light: #F5EAD3;
+    --sage: #5B7355;
+    --sage-light: #E7EEE2;
+    --white: #FFFDF8;
+    --danger: #A3402F;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--parchment);
+    color: var(--ink);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    direction: rtl;
+    text-align: right;
+  }
+  .serif {
+    font-family: "Frank Ruhl Libre", "David", Georgia, serif;
+  }
+  .wrap {
+    max-width: 1050px;
+    margin: 0 auto;
+    padding: 30px 20px 80px;
+  }
+  header.top {
+    margin-bottom: 20px;
+    border-bottom: 2px solid var(--line);
+    padding-bottom: 16px;
+  }
+  header.top h1 {
+    font-size: 34px;
+    font-weight: 700;
+    margin: 0 0 6px;
+    color: var(--pomegranate);
+  }
+  header.top p.sub {
+    color: var(--ink-soft);
+    font-size: 15px;
+    margin: 0;
+    line-height: 1.5;
+  }
+
+  .layout {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+  }
+  @media (min-width: 820px) {
+    .layout {
+      display: grid;
+      grid-template-columns: 1fr 310px;
+      align-items: start;
+    }
+  }
+
+  .setup-card {
+    background: var(--white);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 16px 18px;
+    margin-bottom: 20px;
+  }
+  .setup-card p {
+    margin: 0 0 10px;
+    font-size: 14px;
+    color: var(--ink-soft);
+  }
+  .setup-row {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+  select, input[type=text] {
+    font-family: inherit;
+    font-size: 14px;
+    padding: 8px 10px;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    background: var(--parchment);
+    color: var(--ink);
+  }
+  .whoami {
+    font-size: 13px;
+    color: var(--ink-soft);
+  }
+  .whoami strong { color: var(--ink); }
+
+  .legend {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+    margin: 0 0 24px;
+    font-size: 14px;
+    font-weight: 600;
+    padding: 10px 14px;
+    background: var(--white);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+  }
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .legend .dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    display: inline-block;
+  }
+
+  .spine {
+    position: relative;
+    padding-right: 22px;
+    border-right: 3px solid var(--line);
+  }
+
+  .entry {
+    position: relative;
+    margin-bottom: 26px;
+  }
+  .entry::before {
+    content: "";
+    position: absolute;
+    right: -29px;
+    top: 18px;
+    width: 13px;
+    height: 13px;
+    border-radius: 50%;
+    background: var(--ink-soft);
+    border: 2px solid var(--parchment);
+  }
+  .entry.side-alon::before { background: var(--gold); }
+  .entry.side-chen::before { background: var(--sage); }
+  .entry.side-both::before { background: var(--pomegranate); }
+
+  .card {
+    background: var(--white);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.03);
+  }
+
+  .host-banner {
+    padding: 10px 16px;
+    font-size: 15px;
+    font-weight: 700;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid var(--line);
+  }
+  .host-banner.side-alon { background: var(--gold-light); color: #694D18; }
+  .host-banner.side-chen { background: var(--sage-light); color: #2E4228; }
+  .host-banner.side-both { background: var(--pomegranate-light); color: var(--pomegranate); }
+  .host-label { font-size: 12px; opacity: 0.85; font-weight: 500; }
+
+  .card-body {
+    padding: 16px 18px;
+  }
+  .card .row1 {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 8px;
+  }
+  .card h2 {
+    font-size: 20px;
+    font-weight: 700;
+    margin: 0;
+  }
+  .card .date {
+    font-size: 14px;
+    color: var(--ink-soft);
+    font-weight: 600;
+  }
+
+  .sibling-guide {
+    margin: 12px 0;
+    padding: 10px 12px;
+    background: var(--parchment-2);
+    border-radius: 8px;
+    font-size: 13px;
+    line-height: 1.5;
+    border-right: 3px solid var(--ink-soft);
+  }
+  .sibling-guide strong {
+    display: block;
+    margin-bottom: 4px;
+    color: var(--ink);
+  }
+
+  .controls {
+    margin-top: 14px;
+    padding-top: 12px;
+    border-top: 1px dashed var(--line);
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+  }
+  button {
+    font-family: inherit;
+    font-size: 13px;
+    padding: 7px 12px;
+    border-radius: 6px;
+    border: 1px solid var(--line);
+    background: var(--parchment);
+    color: var(--ink);
+    cursor: pointer;
+    font-weight: 500;
+  }
+  button:hover { border-color: var(--ink-soft); }
+  button.primary {
+    background: var(--pomegranate);
+    color: var(--white);
+    border-color: var(--pomegranate);
+  }
+  button.ghost { background: transparent; }
+  button.small { font-size: 12px; padding: 5px 10px; }
+
+  .attendees {
+    margin-top: 10px;
+    font-size: 13px;
+    color: var(--ink-soft);
+  }
+  .attendees .names { color: var(--ink); font-weight: 600; }
+  .swap-note {
+    margin-top: 10px;
+    font-size: 13px;
+    background: var(--parchment-2);
+    border-radius: 6px;
+    padding: 8px 12px;
+    color: var(--ink);
+  }
+  .swap-note .who { font-weight: 700; color: var(--danger); }
+
+  .add-block {
+    margin-top: 36px;
+    padding-top: 20px;
+    border-top: 2px solid var(--line);
+  }
+  .add-block h3 {
+    font-size: 18px;
+    font-weight: 700;
+    margin: 0 0 12px;
+  }
+  .add-form {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    background: var(--white);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 16px 18px;
+  }
+  .add-form .full { grid-column: 1 / -1; }
+  .add-form label {
+    font-size: 12px;
+    color: var(--ink-soft);
+    display: block;
+    margin-bottom: 4px;
+  }
+  .add-form input, .add-form select { width: 100%; }
+  .add-form .full.submit-row {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 4px;
+  }
+  .err { color: var(--danger); font-size: 12px; margin-top: 4px; display: none; }
+  .err.show { display: block; }
+
+  .sidebar {
+    position: sticky;
+    top: 20px;
+  }
+  .cal-card {
+    background: var(--white);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 16px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.03);
+  }
+  .cal-title-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 14px;
+  }
+  .cal-title-row h3 {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 700;
+  }
+  .cal-nav {
+    display: flex;
+    gap: 4px;
+  }
+  .cal-nav button {
+    padding: 3px 8px;
+    font-size: 12px;
+  }
+  .cal-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 4px;
+    text-align: center;
+    font-size: 12px;
+  }
+  .cal-day-head {
+    font-weight: 700;
+    color: var(--ink-soft);
+    padding-bottom: 6px;
+  }
+  .cal-cell {
+    aspect-ratio: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+    background: var(--parchment);
+    position: relative;
+    font-size: 12px;
+  }
+  .cal-cell.empty { background: transparent; }
+  .cal-cell.has-event {
+    font-weight: 700;
+    cursor: pointer;
+    border: 1px solid var(--line);
+  }
+  .cal-cell .event-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    margin-top: 2px;
+  }
+  .cal-cell.side-alon .event-dot { background: var(--gold); }
+  .cal-cell.side-chen .event-dot { background: var(--sage); }
+  .cal-cell.side-both .event-dot { background: var(--pomegranate); }
+
+  .cal-cell.side-alon { background: var(--gold-light); }
+  .cal-cell.side-chen { background: var(--sage-light); }
+  .cal-cell.side-both { background: var(--pomegranate-light); }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="top">
+    <h1 class="serif">מועדים</h1>
+    <p class="sub">לוח חגים משפחתי. בחרו מארחים (אמא, סבתא, אחיות, משפחה), ראו את סידורי ההגעה וסמנו נוכחות.</p>
+  </header>
+
+  <div class="layout">
+    
+    <main>
+      <div class="setup-card">
+        <p><strong>מי צופה בלוח?</strong> בחרו את שמכם כדי לסמן הגעה או להציע החלפה:</p>
+        <div class="setup-row">
+          <select id="whoSelect">
+            <option value="">אני…</option>
+          </select>
+          <input type="text" id="whoCustom" placeholder="או הקלידו שם" style="display:none; width:150px;">
+          <span class="whoami" id="whoamiLabel"></span>
+        </div>
+      </div>
+
+      <div class="legend">
+        <div class="legend-item"><span class="dot" style="background:var(--gold)"></span> צד אלון (אמא / אחיות)</div>
+        <div class="legend-item"><span class="dot" style="background:var(--sage)"></span> צד חן (אמא / משפחה)</div>
+        <div class="legend-item"><span class="dot" style="background:var(--pomegranate)"></span> סבתא / משותף</div>
+      </div>
+
+      <div class="spine" id="spine"></div>
+
+      <div class="add-block">
+        <h3 class="serif">הוספת חג / אירוע חדש</h3>
+        <div class="add-form">
+          <div>
+            <label for="newName">שם האירוע</label>
+            <input type="text" id="newName" placeholder="למשל: ארוחת ט"ו בשבט">
+          </div>
+          <div>
+            <label for="newDate">תאריך (YYYY-MM-DD)</label>
+            <input type="text" id="newDate" placeholder="2027-01-22">
+          </div>
+          <div>
+            <label for="newHost">מי המארח/ת?</label>
+            <select id="newHost">
+              <option value="mom-alon">אמא (צד אלון)</option>
+              <option value="sisters-alon">אחיות (צד אלון)</option>
+              <option value="mom-chen">אמא / משפחה (צד חן)</option>
+              <option value="grandma">סבתא</option>
+              <option value="shared">משותף / שניהם</option>
+            </select>
+          </div>
+          <div>
+            <label for="newAddedBy">נוצר על ידי</label>
+            <input type="text" id="newAddedBy" placeholder="השם שלך" disabled>
+          </div>
+          <div class="full">
+            <div class="err" id="addErr">יש להזין שם חג ותאריך בפורמט תקין.</div>
+          </div>
+          <div class="full submit-row">
+            <button class="primary" id="addBtn" type="button">הוספה ללוח</button>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <aside class="sidebar">
+      <div class="cal-card">
+        <div class="cal-title-row">
+          <h3 id="calMonthTitle">תאריכון חגים</h3>
+          <div class="cal-nav">
+            <button id="prevMonthBtn">&gt;</button>
+            <button id="nextMonthBtn">&lt;</button>
+          </div>
+        </div>
+        <div class="cal-grid" id="calGrid"></div>
+      </div>
+    </aside>
+
+  </div>
+
+</div>
+
+<script>
+(function () {
+  var STORAGE_KEY = 'moadim-roster-v4';
+  var PEOPLE_KEY = 'moadim-people-v4';
+
+  var DEFAULT_PEOPLE = ['אלון', 'חן'];
+
+  var HOST_MAP = {
+    'mom-alon': { label: 'מארח/ת: אמא (צד אלון) 🏠', side: 'alon', guide: '3 האחיות של אלון מגיעות לאמא. משפחות הגיסים פנויות לחגוג אצל משפחתם.' },
+    'sisters-alon': { label: 'מארח/ת: אצל האחיות (צד אלון) 🏠', side: 'alon', guide: 'אירוח אצל האחיות של אלון. הגיסים מגיעים איתן; אחי חן פנויים למשפחות בניהזוג.' },
+    'mom-chen': { label: 'מארח/ת: אמא / משפחה (צד חן) 🏠', side: 'chen', guide: 'האחים והאחיות של חן מגיעים לצד של חן. האחיות של אלון פנויות לחגוג אצל משפחות בעליהן.' },
+    'grandma': { label: 'מארח/ת: סבתא 👵', side: 'both', guide: 'ארוחה משפחתית אצל סבתא — כולן/ם מוזמנות/ים.' },
+    'shared': { label: 'מארח/ת: אירוח משותף 🤝', side: 'both', guide: 'מפגש משותף לכל המשפחות.' }
+  };
+
+  var DEFAULT_ENTRIES = [
+    { id: 'rh1', name: 'ראש השנה — ערב א׳', dateStr: 'שישי, 11 ספטמבר 2026', isoDate: '2026-09-11', hostKey: 'grandma', attendees: [], swap: null },
+    { id: 'rh2', name: 'ראש השנה — ערב ב׳', dateStr: 'שבת, 12 ספטמבר 2026', isoDate: '2026-09-12', hostKey: 'grandma', attendees: [], swap: null },
+    { id: 'sukkot1', name: 'סוכות — ערב חג ראשון', dateStr: 'חמישי, 24 ספטמבר 2026', isoDate: '2026-09-24', hostKey: 'mom-alon', attendees: [], swap: null },
+    { id: 'chanukah', name: 'חנוכה (ארוחה משפחתית)', dateStr: 'שישי, 4 דצמבר 2026', isoDate: '2026-12-04', hostKey: 'mom-chen', attendees: [], swap: null },
+    { id: 'seder', name: 'פסח — ליל הסדר', dateStr: 'רביעי, 21 אפריל 2027', isoDate: '2027-04-21', hostKey: 'mom-alon', attendees: [], swap: null },
+    { id: 'pesach7', name: 'פסח — שביעי של פסח', dateStr: 'שלישי, 27 אפריל 2027', isoDate: '2027-04-27', hostKey: 'mom-chen', attendees: [], swap: null },
+    { id: 'atzmaut-eve', name: 'יום העצמאות — ארוחת ערב', dateStr: 'שלישי, 11 מאי 2027', isoDate: '2027-05-11', hostKey: 'sisters-alon', attendees: [], swap: null },
+    { id: 'atzmaut-day', name: 'יום העצמאות — על האש (צהריים)', dateStr: 'רביעי, 12 מאי 2027', isoDate: '2027-05-12', hostKey: 'mom-chen', attendees: [], swap: null },
+    { id: 'shavuot', name: 'שבועות', dateStr: 'רביעי, 9 ביוני 2027', isoDate: '2027-06-09', hostKey: 'mom-alon', attendees: [], swap: null }
+  ];
+
+  var state = { entries: [], people: DEFAULT_PEOPLE.slice() };
+  var currentUser = '';
+  var calYear = 2026;
+  var calMonth = 8;
+
+  var spineEl = document.getElementById('spine');
+  var whoSelect = document.getElementById('whoSelect');
+  var whoCustom = document.getElementById('whoCustom');
+  var whoamiLabel = document.getElementById('whoamiLabel');
+  var newAddedBy = document.getElementById('newAddedBy');
+
+  var calMonthTitle = document.getElementById('calMonthTitle');
+  var calGrid = document.getElementById('calGrid');
+
+  var HEBREW_MONTHS = ['ינואר', 'פברואר', 'מרץ', 'אפריל', 'מאי', 'יוני', 'יולי', 'אוגוסט', 'ספטמבר', 'אוקטובר', 'נובמבר', 'דצמבר'];
+
+  function escapeHtml(str) {
+    var d = document.createElement('div');
+    d.textContent = str;
+    return d.innerHTML;
+  }
+
+  function loadState() {
+    try {
+      var saved = localStorage.getItem(STORAGE_KEY);
+      state.entries = saved ? JSON.parse(saved).entries : DEFAULT_ENTRIES;
+    } catch (e) {
+      state.entries = DEFAULT_ENTRIES;
+    }
+
+    try {
+      var savedPeople = localStorage.getItem(PEOPLE_KEY);
+      if (savedPeople) state.people = JSON.parse(savedPeople);
+    } catch (e) {}
+
+    renderPeople();
+    render();
+    renderCalendar();
+  }
+
+  function saveState() {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ entries: state.entries }));
+  }
+
+  function savePeople() {
+    localStorage.setItem(PEOPLE_KEY, JSON.stringify(state.people));
+  }
+
+  function renderPeople() {
+    var current = whoSelect.value;
+    whoSelect.innerHTML = '<option value="">אני…</option>';
+    state.people.forEach(function (p) {
+      var opt = document.createElement('option');
+      opt.value = p;
+      opt.textContent = p;
+      whoSelect.appendChild(opt);
+    });
+    var otherOpt = document.createElement('option');
+    otherOpt.value = '__other__';
+    otherOpt.textContent = 'מישהו אחר…';
+    whoSelect.appendChild(otherOpt);
+    if (current && state.people.indexOf(current) !== -1) whoSelect.value = current;
+  }
+
+  whoSelect.addEventListener('change', function () {
+    if (whoSelect.value === '__other__') {
+      whoCustom.style.display = 'inline-block';
+      whoCustom.focus();
+      currentUser = '';
+    } else {
+      whoCustom.style.display = 'none';
+      currentUser = whoSelect.value;
+    }
+    updateWhoami();
+  });
+
+  whoCustom.addEventListener('input', function () {
+    currentUser = whoCustom.value.trim();
+    updateWhoami();
+  });
+
+  whoCustom.addEventListener('change', function () {
+    var name = whoCustom.value.trim();
+    if (name && state.people.indexOf(name) === -1) {
+      state.people.push(name);
+      savePeople();
+      renderPeople();
+      whoSelect.value = name;
+      whoCustom.style.display = 'none';
+      currentUser = name;
+      updateWhoami();
+    }
+  });
+
+  function updateWhoami() {
+    if (currentUser) {
+      whoamiLabel.innerHTML = 'מסומן כ-<strong>' + escapeHtml(currentUser) + '</strong>';
+      newAddedBy.disabled = false;
+      newAddedBy.value = currentUser;
+    } else {
+      whoamiLabel.textContent = '';
+      newAddedBy.disabled = true;
+      newAddedBy.value = '';
+    }
+  }
+
+  function render() {
+    spineEl.innerHTML = '';
+
+    state.entries.forEach(function (entry) {
+      var hostInfo = HOST_MAP[entry.hostKey] || HOST_MAP['shared'];
+      var wrap = document.createElement('div');
+      wrap.className = 'entry side-' + hostInfo.side;
+      wrap.id = 'entry-' + entry.id;
+
+      var card = document.createElement('div');
+      card.className = 'card';
+
+      var banner = document.createElement('div');
+      banner.className = 'host-banner side-' + hostInfo.side;
+      banner.innerHTML = '<span>' + hostInfo.label + '</span><span class="host-label">מארחים</span>';
+      card.appendChild(banner);
+
+      var body = document.createElement('div');
+      body.className = 'card-body';
+
+      var row1 = document.createElement('div');
+      row1.className = 'row1';
+      var h2 = document.createElement('h2');
+      h2.className = 'serif';
+      h2.textContent = entry.name;
+      var dateSpan = document.createElement('span');
+      dateSpan.className = 'date';
+      dateSpan.textContent = entry.dateStr || entry.isoDate;
+      row1.appendChild(h2);
+      row1.appendChild(dateSpan);
+      body.appendChild(row1);
+
+      var guide = document.createElement('div');
+      guide.className = 'sibling-guide';
+      guide.innerHTML = '<strong>💡 סידור הגעה לאחים ולגיסים:</strong> ' + hostInfo.guide;
+      body.appendChild(guide);
+
+      var attendeesEl = document.createElement('div');
+      attendeesEl.className = 'attendees';
+      if (entry.attendees && entry.attendees.length) {
+        attendeesEl.innerHTML = 'מגיעים: <span class="names">' + entry.attendees.map(escapeHtml).join(', ') + '</span>';
+      } else {
+        attendeesEl.textContent = 'אף אחד עוד לא סימן הגעה.';
+      }
+      body.appendChild(attendeesEl);
+
+      if (entry.swap) {
+        var swapEl = document.createElement('div');
+        swapEl.className = 'swap-note';
+        swapEl.innerHTML = '<span class="who">' + escapeHtml(entry.swap.by) + '</span> הציע/ה החלפה: ' + escapeHtml(entry.swap.note);
+        body.appendChild(swapEl);
+      }
+
+      var controls = document.createElement('div');
+      controls.className = 'controls';
+
+      var attendBtn = document.createElement('button');
+      var isAttending = currentUser && entry.attendees && entry.attendees.indexOf(currentUser) !== -1;
+      attendBtn.textContent = isAttending ? 'לא מגיע/ה' : 'אני אגיע';
+      attendBtn.className = 'small';
+      attendBtn.addEventListener('click', function () {
+        toggleAttendance(entry.id);
+      });
+      controls.appendChild(attendBtn);
+
+      var swapBtn = document.createElement('button');
+      swapBtn.textContent = 'הצעת החלפה';
+      swapBtn.className = 'small ghost';
+      swapBtn.addEventListener('click', function () {
+        promptSwap(entry.id);
+      });
+      controls.appendChild(swapBtn);
+
+      if (entry.swap) {
+        var clearSwap = document.createElement('button');
+        clearSwap.textContent = 'מחיקת הערה';
+        clearSwap.className = 'small ghost';
+        clearSwap.addEventListener('click', function () {
+          clearSwapNote(entry.id);
+        });
+        controls.appendChild(clearSwap);
+      }
+
+      body.appendChild(controls);
+      card.appendChild(body);
+      wrap.appendChild(card);
+      spineEl.appendChild(wrap);
+    });
+  }
+
+  function toggleAttendance(id) {
+    if (!currentUser) {
+      alert('יש לבחור מי את/ה בראש העמוד תחילה.');
+      return;
+    }
+    var entry = state.entries.find(function (e) { return e.id === id; });
+    if (!entry) return;
+    if (!entry.attendees) entry.attendees = [];
+    var idx = entry.attendees.indexOf(currentUser);
+    if (idx === -1) {
+      entry.attendees.push(currentUser);
+    } else {
+      entry.attendees.splice(idx, 1);
+    }
+    render();
+    saveState();
+  }
+
+  function promptSwap(id) {
+    if (!currentUser) {
+      alert('יש לבחור מי את/ה בראש העמוד תחילה.');
+      return;
+    }
+    var entry = state.entries.find(function (e) { return e.id === id; });
+    if (!entry) return;
+    var note = prompt('תארו את ההחלפה המוצעת עבור "' + entry.name + '":');
+    if (note === null) return;
+    note = note.trim();
+    if (!note) return;
+    entry.swap = { by: currentUser, note: note };
+    render();
+    saveState();
+  }
+
+  function clearSwapNote(id) {
+    var entry = state.entries.find(function (e) { return e.id === id; });
+    if (!entry) return;
+    entry.swap = null;
+    render();
+    saveState();
+  }
+
+  function renderCalendar() {
+    calMonthTitle.textContent = HEBREW_MONTHS[calMonth] + ' ' + calYear;
+    calGrid.innerHTML = '';
+
+    var heads = ['א׳', 'ב׳', 'ג׳', 'ד׳', 'ה׳', 'ו׳', 'ש׳'];
+    heads.forEach(function (h) {
+      var d = document.createElement('div');
+      d.className = 'cal-day-head';
+      d.textContent = h;
+      calGrid.appendChild(d);
+    });
+
+    var firstDay = new Date(calYear, calMonth, 1).getDay();
+    var daysInMonth = new Date(calYear, calMonth + 1, 0).getDate();
+
+    for (var i = 0; i < firstDay; i++) {
+      var empty = document.createElement('div');
+      empty.className = 'cal-cell empty';
+      calGrid.appendChild(empty);
+    }
+
+    for (var day = 1; day <= daysInMonth; day++) {
+      var cell = document.createElement('div');
+      cell.className = 'cal-cell';
+      cell.textContent = day;
+
+      var monthStr = (calMonth + 1 < 10 ? '0' : '') + (calMonth + 1);
+      var dayStr = (day < 10 ? '0' : '') + day;
+      var iso = calYear + '-' + monthStr + '-' + dayStr;
+
+      var match = state.entries.find(function (e) { return e.isoDate === iso; });
+      if (match) {
+        var hInfo = HOST_MAP[match.hostKey] || HOST_MAP['shared'];
+        cell.classList.add('has-event', 'side-' + hInfo.side);
+        var dot = document.createElement('div');
+        dot.className = 'event-dot';
+        cell.appendChild(dot);
+        cell.title = match.name;
+        (function(entryId) {
+          cell.addEventListener('click', function() {
+            var el = document.getElementById('entry-' + entryId);
+            if (el) el.scrollIntoView({ behavior: 'smooth' });
+          });
+        })(match.id);
+      }
+
+      calGrid.appendChild(cell);
+    }
+  }
+
+  document.getElementById('prevMonthBtn').addEventListener('click', function () {
+    calMonth--;
+    if (calMonth < 0) { calMonth = 11; calYear--; }
+    renderCalendar();
+  });
+
+  document.getElementById('nextMonthBtn').addEventListener('click', function () {
+    calMonth++;
+    if (calMonth > 11) { calMonth = 0; calYear++; }
+    renderCalendar();
+  });
+
+  var newName = document.getElementById('newName');
+  var newDate = document.getElementById('newDate');
+  var newHost = document.getElementById('newHost');
+  var addBtn = document.getElementById('addBtn');
+  var addErr = document.getElementById('addErr');
+
+  addBtn.addEventListener('click', function () {
+    var name = newName.value.trim();
+    var iso = newDate.value.trim();
+    if (!name || !iso) {
+      addErr.classList.add('show');
+      return;
+    }
+    addErr.classList.remove('show');
+
+    var id = 'custom-' + Date.now();
+    state.entries.push({
+      id: id,
+      name: name,
+      dateStr: iso,
+      isoDate: iso,
+      hostKey: newHost.value,
+      attendees: [],
+      swap: null
+    });
+
+    newName.value = '';
+    newDate.value = '';
+    newHost.value = 'mom-alon';
+
+    render();
+    renderCalendar();
+    saveState();
+  });
+
+  loadState();
+})();
+</script>
+</body>
+</html>
